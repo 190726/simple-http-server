@@ -1,5 +1,7 @@
 package com.sk.http.util;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -9,32 +11,15 @@ import java.net.URL;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sk.http.config.Configuration;
+import com.sk.http.config.ConfigurationManager;
 
 class JsonTest {
-
+	
 	@Test
-	void test() throws IOException {
-		File file = new File("src/main/resources/http.json");
-		System.out.println(file.exists());
-		URL resource = getClass().getClassLoader().getResource("http.json");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openStream()));
-
-		StringBuilder builder = new StringBuilder();
-		
-		String line = "";
-		while((line = reader.readLine()) != null) {
-			builder.append(line);
-			builder.append("\n");
-		}
-		reader.close();
-		
-		String json = builder.toString();
-		ObjectMapper mapper = new ObjectMapper();
-		Configuration readValue = mapper.readValue(json, Configuration.class);
-		
-		System.out.println(builder.toString());
-		System.out.println(readValue);
-		
+	void json() throws Exception {
+		ConfigurationManager manager = ConfigurationManager.INSTANCE;
+		Configuration configuration = manager.configuration();
+		assertEquals(configuration.getPort(), 8080);
 	}
-
 }
