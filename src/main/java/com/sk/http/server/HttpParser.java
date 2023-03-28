@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class HttpParser {
 	
@@ -14,42 +15,62 @@ public class HttpParser {
 	public HttpRequest parseHttpRequest(InputStream inputStream) {
 		InputStreamReader reader = new InputStreamReader(inputStream);
 		HttpRequest request = new HttpRequest();
+		
 		try {
-			parseRequestLine(reader, request);
+			HttpRequest parseRequestLine = parseRequestLine(reader, request);
+			System.out.println(parseRequestLine);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return new HttpRequest();
 	}
 
-	public void parseRequestLine(InputStreamReader reader, HttpRequest request) throws IOException {
-		//TODO
+	//HTTP request first line parsing
+	public HttpRequest parseRequestLine(InputStreamReader reader, HttpRequest request) throws IOException {
+		
+		HttpRequest httpRequest = new HttpRequest();
+		StringBuilder builder = new StringBuilder();
+		
+		boolean methodParsed = false;
+		boolean requestTargetParsed = false;
+		
+		int _byte;
+		
+		while((_byte = reader.read()) >=0 ) {
+			
+			if (_byte == CR) {
+                _byte = reader.read();
+                if (_byte == LF) {
+                	httpRequest.setHttpVersion(builder.toString());
+                	break;
+                } else {
+                	throw new HttpParsingException();
+                }
+            }
+            if (_byte == SP) {
+                if (!methodParsed) {
+                	httpRequest.setMethod(builder.toString());
+                    methodParsed = true;
+                } else if (!requestTargetParsed) {
+                	httpRequest.setTarget(builder.toString());
+                    requestTargetParsed = true;
+                }
+                builder.delete(0, builder.length());
+            } else {
+            	builder.append((char)_byte);
+                if (!methodParsed) {
+                    if (builder.length() > 4) {
+                    	throw new HttpParsingException();
+                    }
+                }
+            }
+		}
+		return httpRequest;
 	}
 	
 	public static void main(String[] args) throws IOException {
-		HttpParser httpParser = new HttpParser();
-		httpParser.parseRequestLine(new InputStreamReader(httpParser.getSample()), new HttpRequest());
+		
 	}
 	
-	private InputStream getSample() {
-		return new ByteArrayInputStream( 
-			"""
-			GET / HTTP/1.1
-			Host: localhost:8080
-			Connection: keep-alive
-			Cache-Control: max-age=0
-			sec-ch-ua: ".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"
-			sec-ch-ua-mobile: ?0
-			sec-ch-ua-platform: "Windows"
-			Upgrade-Insecure-Requests: 1
-			User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36
-			Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-			Sec-Fetch-Site: none
-			Sec-Fetch-Mode: navigate
-			Sec-Fetch-User: ?1
-			Sec-Fetch-Dest: document
-			Accept-Encoding: gzip, deflate, br
-			Accept-Language: ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7
-				""".getBytes());
-	}
+	
 }
